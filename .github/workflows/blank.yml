@@ -31,11 +31,41 @@ jobs:
         touch .env.example
         echo "GEMINI_API_KEY=dummy_key" > .env.example
 
-    # 3. Dummy google-services.json create karein (Gradle error bypass karne ke liye)
+    # 3. Valid JSON Structure ke sath Dummy google-services.json create karein
     - name: Create Dummy google-services.json
       run: |
         mkdir -p app
-        echo '{}' > app/google-services.json
+        cat <<EOF > app/google-services.json
+        {
+          "project_info": {
+            "project_number": "1234567890",
+            "project_id": "dummy-project",
+            "storage_bucket": "dummy-project.appspot.com"
+          },
+          "client": [
+            {
+              "client_info": {
+                "mobilesdk_app_id": "1:1234567890:android:1234567890abcdef",
+                "android_client_info": {
+                  "package_name": "com.example.app"
+                }
+              },
+              "oauth_client": [],
+              "api_key": [
+                {
+                  "current_key": "dummy_api_key"
+                }
+              ],
+              "services": {
+                "appinvite_service": {
+                  "other_platform_oauth_client": []
+                }
+              }
+            }
+          ],
+          "configuration_version": "1"
+        }
+        EOF
 
     # 4. Unnecessary resource files clean karein
     - name: Clean Resource Files
@@ -65,7 +95,7 @@ jobs:
           -storetype JKS \
           -dname "CN=RGH Creator, O=Coding, C=IN"
         
-        # Keystore ko root folder me copy karein jahan build.gradle dhoondh raha hai
+        # Keystore ko project root folder me copy karein
         cp /home/runner/.android/debug.keystore ./debug.keystore
 
     # 7. Gradle wrapper executable banayein

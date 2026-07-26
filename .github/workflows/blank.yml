@@ -13,7 +13,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. Zip file ko correctly extract aur base directory me move karein
+    # 1. Zip file ko extract karein
     - name: Unzip Project Files
       run: |
         unzip -q ai-resume-builder.zip -d extracted_project
@@ -25,19 +25,25 @@ jobs:
         rm -rf extracted_project ai-resume-builder.zip
         ls -la
 
-    # 2. Missing .env.example file ko create karein
+    # 2. Dummy .env file create karein
     - name: Create Dummy Env File
       run: |
         touch .env.example
         echo "GEMINI_API_KEY=dummy_key" > .env.example
 
-    # 3. Safety Resource Cleanup
+    # 3. Dummy google-services.json create karein (Gradle error bypass karne ke liye)
+    - name: Create Dummy google-services.json
+      run: |
+        mkdir -p app
+        echo '{}' > app/google-services.json
+
+    # 4. Unnecessary resource files clean karein
     - name: Clean Resource Files
       run: |
-        find . -path "**/src/main/res/mipmap/*" -name "Type.kt" -delete
+        find . -path "*/src/main/res/mipmap/*" -name "Type.kt" -delete
         echo "Resource cleanup done."
 
-    # 4. Set up JDK 17
+    # 5. Set up JDK 17
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -45,7 +51,7 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    # 5. Keystore explicitly dobara create karein kyunki build.gradle isko dhoondh raha hai
+    # 6. Debug Keystore generate karein aur project root me copy karein
     - name: Setup Required Debug Keystore
       run: |
         mkdir -p /home/runner/.android/
@@ -58,27 +64,27 @@ jobs:
           -validity 10000 \
           -storetype JKS \
           -dname "CN=RGH Creator, O=Coding, C=IN"
+        
+        # Keystore ko root folder me copy karein jahan build.gradle dhoondh raha hai
+        cp /home/runner/.android/debug.keystore ./debug.keystore
 
-    # 6. Gradle wrapper forcefully generate karein
+    # 7. Gradle wrapper executable banayein
     - name: Setup Gradle wrapper forcefully
       run: |
         gradle wrapper
         chmod +x gradlew
 
-    # 7. Build Debug APK (Android Studio plugin crash bypass properties ke sath)
+    # 8. APK Build karein
     - name: Build Debug APK
       run: |
         ./gradlew assembleDebug --no-daemon \
-          -Dorg.gradle.project.android.experimental.privacysandbox.sdkgears.enabled=false \
+          -Dorg.gradle.project.android.experimental.privacyandbox.sdkgears.enabled=false \
           -Didea.sync.active=false
 
-    # 8. Final Deliverables (Sirf APK) Upload Package
+    # 9. Output APK Deliverables Upload karein
     - name: Upload APK Deliverables
       uses: actions/upload-artifact@v4
       with:
         name: ai-resume-builder-APK-Package
         path: |
           **/build/outputs/apk/debug/*.apk
-
-
-          
